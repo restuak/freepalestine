@@ -15,10 +15,10 @@ import SectionTitle from "./Title";
 
 const palette = ["#CE1126", "#E0404E", "#E96B78", "#F296A2", "#FBCAD1"];
 
-// custom renderer untuk label pie
-const renderCustomLabel = (props: any, isMobile: boolean, total: number) => {
+// Label desktop: nama + persen, di luar pie
+const renderDesktopLabel = (props: any, total: number) => {
   const { name, value, cx, cy, midAngle, innerRadius, outerRadius } = props;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const radius = outerRadius * 1.15;
   const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
   const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
 
@@ -29,9 +29,30 @@ const renderCustomLabel = (props: any, isMobile: boolean, total: number) => {
       fill="white"
       textAnchor={x > cx ? "start" : "end"}
       dominantBaseline="central"
-      style={{ fontSize: isMobile ? "8px" : "14px" }} // mobile kecil, desktop besar
+      style={{ fontSize: "14px", fontWeight: 500 }}
     >
       {`${name} (${Math.round((value / total) * 100)}%)`}
+    </text>
+  );
+};
+
+// Label mobile: persen kecil di dalam slice
+const renderMobileLabel = (props: any, total: number) => {
+  const { value, cx, cy, midAngle, innerRadius, outerRadius } = props;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+  const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="white"
+      textAnchor="middle"
+      dominantBaseline="central"
+      style={{ fontSize: "10px", fontWeight: 600 }}
+    >
+      {`${Math.round((value / total) * 100)}%`}
     </text>
   );
 };
@@ -47,7 +68,6 @@ export default function CasualtiesDonut() {
       .catch((err) => console.error(err));
   }, []);
 
-  // deteksi ukuran layar
   useEffect(() => {
     const checkScreen = () => setIsMobile(window.innerWidth < 768);
     checkScreen();
@@ -91,19 +111,21 @@ export default function CasualtiesDonut() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8 }}
-        className="p-6 md:p-10 rounded-2xl shadow-lg flex justify-center bg-black/20"
+        className="p-6 md:p-10 rounded-2xl shadow-lg flex justify-center bg-gradient-to-b from-[#CE1126]/40 to-black/40"
       >
-        <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
+        <ResponsiveContainer width="100%" height={isMobile ? 320 : 400}>
           <PieChart>
             <Pie
               data={chartData}
               dataKey="value"
               cx="50%"
               cy="50%"
-              innerRadius={isMobile ? "25%" : "40%"}
-              outerRadius={isMobile ? "45%" : "70%"}
+              innerRadius={isMobile ? "35%" : "40%"}
+              outerRadius={isMobile ? "70%" : "70%"}
               label={(props) =>
-                renderCustomLabel(props, isMobile, gaza.killed.total)
+                isMobile
+                  ? renderMobileLabel(props, gaza.killed.total)
+                  : renderDesktopLabel(props, gaza.killed.total)
               }
               animationBegin={0}
               animationDuration={1500}
@@ -132,7 +154,7 @@ export default function CasualtiesDonut() {
               wrapperStyle={{
                 color: "white",
                 paddingTop: "10px",
-                fontSize: isMobile ? "12px" : "16px", // legend lebih besar di mobile
+                fontSize: isMobile ? "12px" : "16px",
               }}
             />
           </PieChart>
