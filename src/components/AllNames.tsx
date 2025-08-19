@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import LoadingPage from "./Loading";
 
 interface Victim {
   id?: string;
-  name?: string; 
-  en_name?: string; 
-  sex?: string; 
+  name?: string;
+  en_name?: string;
+  sex?: string;
   age?: number;
 }
 
@@ -24,7 +25,8 @@ const PAGE_SIZE = 25;
 
 export default function AllNames() {
   const [data, setData] = useState<Victim[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(true);
+  const [showLoading, setShowLoading] = useState(true); 
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
@@ -33,7 +35,7 @@ export default function AllNames() {
   useEffect(() => {
     async function fetchPage(p: number) {
       try {
-        setLoading(true);
+        setFetching(true);
         const res = await fetch(
           `https://data.techforpalestine.org/api/v2/killed-in-gaza/page-${p}.json`,
           { cache: "no-store" }
@@ -41,7 +43,6 @@ export default function AllNames() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = (await res.json()) as Victim[];
 
-        // batasi hanya 25 item per halaman
         const sliced = json.slice(0, PAGE_SIZE);
 
         if (sliced.length === 0) {
@@ -50,10 +51,11 @@ export default function AllNames() {
           setData((prev) => [...prev, ...sliced]);
         }
       } catch (e: any) {
-        console.error(e);
         setError(e.message);
       } finally {
-        setLoading(false);
+        setFetching(false);
+
+        setTimeout(() => setShowLoading(false), 3000);
       }
     }
     fetchPage(page);
@@ -69,6 +71,11 @@ export default function AllNames() {
     );
   }, [data, q]);
 
+
+  if (showLoading) {
+    return <LoadingPage />;
+  }
+
   return (
     <main
       className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
@@ -80,7 +87,7 @@ export default function AllNames() {
         style={{ backgroundColor: COLORS.black }}
       >
         <h1
-          className="text-3xl font-bold text-center mb-4"
+          className="text-3xl font-bold text-center mb-4 uppercase"
           style={{ color: COLORS.maroon }}
         >
           Memorial for All Martyrs
@@ -129,8 +136,7 @@ export default function AllNames() {
               className="text-xl font-semibold flex items-center gap-2"
               style={{ color: COLORS.green }}
             >
-              {v.en_name ?? v.name ?? "UNKNOWN"}
-              <span>🌹</span>{" "}
+              {v.en_name ?? v.name ?? "UNKNOWN"} 🌹
             </p>
             {v.name && (
               <p className="text-sm" style={{ color: COLORS.white }}>
@@ -155,9 +161,12 @@ export default function AllNames() {
 
       {/* Pagination */}
       <div className="flex justify-center mt-6">
-        {hasMore && !loading && (
+        {hasMore && !fetching && (
           <button
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => {
+              setShowLoading(true); 
+              setPage((p) => p + 1);
+            }}
             className="px-6 py-2 rounded-xl font-semibold"
             style={{
               backgroundColor: COLORS.green,
@@ -167,7 +176,7 @@ export default function AllNames() {
             Load More
           </button>
         )}
-        {loading && (
+        {fetching && data.length > 0 && (
           <p className="text-sm mt-2" style={{ color: COLORS.pink }}>
             Loading…
           </p>

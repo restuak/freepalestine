@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import LoadingPage from "./Loading";
 
 interface Journalist {
   name: string;
-  name_en: string; 
+  name_en: string;
   notes?: string;
 }
 
@@ -13,6 +14,8 @@ export default function PressMemorial() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
     async function fetchData() {
       try {
         const res = await fetch(
@@ -20,22 +23,25 @@ export default function PressMemorial() {
         );
         const json = await res.json();
         setData(json);
+
+       
+        timeout = setTimeout(() => {
+          setLoading(false);
+        }, 3000);
       } catch (err) {
         console.error("Failed to fetch press data", err);
-      } finally {
         setLoading(false);
       }
     }
+
     fetchData();
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-[50vh] text-white">
-        Loading...
-      </div>
-    );
-  }
+  if (loading) return <LoadingPage />;
 
   return (
     <div className="max-w-5xl mx-auto p-6">

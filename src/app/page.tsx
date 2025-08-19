@@ -2,54 +2,53 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import HeroCounters from "@/components/statistics/HeroCounters";
-import SummaryChart from "@/components/statistics/SummaryChart";
-import KilledPieChart from "@/components/statistics/KilledPieChart";
-import InjuredChart from "@/components/statistics/InjuredChart";
-import InfrastructureBarChart from "@/components/statistics/InfrastructureBarChart";
-import InfrastructureTrend from "@/components/statistics/InfrastructureTrend";
+import OverviewSummary from "@/components/statistics/SummaryKilled";
+import CasualtyByAge from "@/components/statistics/CasualtyByAge";
 import HeroRemember from "@/components/HeroRemember";
+import CasualtiesDonut from "@/components/statistics/CasualtiesByCategory";
+import PressKilled from "@/components/statistics/PressKilled";
+import LoadingPage from "@/components/Loading";
 
-export default function StatisticsPage() {
-  const [summary, setSummary] = useState<any | null>(null);
-  const [infra, setInfra] = useState<any[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export default function Overview() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    let timeout: NodeJS.Timeout;
+
+    async function fetchData() {
       try {
-        const [summaryRes, infraRes] = await Promise.all([
-          axios.get("https://data.techforpalestine.org/api/v3/summary.json"),
-          axios.get(
-            "https://data.techforpalestine.org/api/v3/infrastructure-damaged.json"
-          ),
-        ]);
-        setSummary(summaryRes.data);
-        setInfra(infraRes.data);
-      } catch (err: any) {
-        setError(err.message);
-        throw new Error(`Failed to fetch data: ${err.message}`);
+        const res = await axios.get(
+          "https://data.techforpalestine.org/api/v3/summary.json"
+        );
+        setData(res.data);
+
+       
+        timeout = setTimeout(() => {
+          setLoading(false);
+        }, 3000);
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
       }
-    };
+    }
+
     fetchData();
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
   }, []);
 
-  if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
-  if (!summary || !infra) return <div className="p-4">Loading...</div>;
+  if (loading) return <LoadingPage />;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-black text-white px-4 py-12">
       <HeroRemember />
-      <HeroCounters data={summary} />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <SummaryChart data={summary} />
-        <KilledPieChart data={summary} />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <InjuredChart data={summary} />
-        <InfrastructureBarChart data={infra} />
-      </div>
-      <InfrastructureTrend data={infra} />
+      <OverviewSummary data={data} />
+      <CasualtyByAge />
+      <CasualtiesDonut />
+      <PressKilled />
     </div>
   );
 }

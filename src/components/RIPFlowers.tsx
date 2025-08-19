@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import LoadingPage from "./Loading";
 
 interface Victim {
   name: string;
@@ -13,12 +14,17 @@ export default function RIPFlowers() {
   const [isMuted, setIsMuted] = useState(false);
   const [victims, setVictims] = useState<Victim[]>([]);
   const [rowCount, setRowCount] = useState(0);
+  const [loading, setLoading] = useState(true); 
 
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     function calcRows() {
       const screenHeight = window.innerHeight;
-      const lineHeight = 40; 
+      const lineHeight = 40;
       setRowCount(Math.floor(screenHeight / lineHeight));
     }
 
@@ -34,7 +40,6 @@ export default function RIPFlowers() {
         const res = await axios.get(
           "https://data.techforpalestine.org/api/v2/killed-in-gaza/page-3.json"
         );
-        console.log("Full API response:", res.data);
 
         if (res.data?.results) {
           setVictims(
@@ -104,11 +109,14 @@ export default function RIPFlowers() {
     }
   }
 
+  // === Render ===
+  if (loading) return <LoadingPage />; 
+
   return (
     <div className="relative flex flex-col items-center pt-8 pb-16 bg-gray-900 min-h-screen text-white overflow-hidden">
       <div id="yt-player" className="hidden" />
 
-      {/*BACKGROUND  */}
+      {/*BACKGROUND*/}
       <div className="absolute inset-0 opacity-25 text-sm sm:text-base font-semibold pointer-events-none z-0">
         {victims.length > 0 ? (
           [...Array(rowCount)].map((_, row) => (
@@ -169,6 +177,7 @@ export default function RIPFlowers() {
         @keyframes marquee {
           0% {
             transform: translateX(-30%);
+          }
           100% {
             transform: translateX(-70%);
           }
