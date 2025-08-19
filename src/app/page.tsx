@@ -19,8 +19,7 @@ export default function StatisticsPage() {
     const fetchData = async () => {
       try {
         const [summaryRes, infraRes] = await Promise.all([
-          axios.get(
-            "https://data.techforpalestine.org/api/v3/summary.json"),
+          axios.get("https://data.techforpalestine.org/api/v3/summary.json"),
           axios.get(
             "https://data.techforpalestine.org/api/v3/infrastructure-damaged.json"
           ),
