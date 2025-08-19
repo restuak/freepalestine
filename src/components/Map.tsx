@@ -77,7 +77,7 @@ export default function Map() {
 
        
         if (typeof window !== "undefined") {
-          window.alert("Masih dibenerin ini, masih rusak pagenya, sabar ye!");
+          window.alert("Masih dibenerin ini, masih rusak pagenya, sabar yaaaaa!");
         }
       } catch (err) {
         console.error("Fetch infra failed", err);
@@ -91,13 +91,13 @@ export default function Map() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-lg font-semibold">
-        Loading Infrastruktur...
+        Loading...
       </div>
     );
   }
 
   return (
-    <div className="w-full h-[500px] rounded-xl overflow-hidden shadow-md">
+    <div className="w-full h-screen rounded-xl overflow-hidden shadow-md">
       <MapContainer
         center={[31.5, 34.47]} // Gaza
         zoom={11}
