@@ -1,57 +1,60 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import L from "leaflet";
+import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
-import LoadingPage from "./Loading";
 
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const Marker = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Marker),
-  { ssr: false }
-);
-const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
-  ssr: false,
-});
-
-interface InfraData {
-  report_date: string;
-  civic_buildings: { ext_destroyed: number };
-  educational_buildings: { ext_destroyed: number; ext_damaged: number };
-  places_of_worship: {
-    ext_mosques_destroyed: number;
-    ext_mosques_damaged: number;
-    ext_churches_destroyed: number;
-  };
-  residential: { ext_destroyed: number };
-}
-
-// ✅ Semua icon flat-style seragam
-const categoryIcons: Record<string, string> = {
-  residential: "https://cdn-icons-png.flaticon.com/512/69/69524.png",
-  mosques_destroyed: "https://cdn-icons-png.flaticon.com/512/3176/3176381.png",
-  mosques_damaged: "https://cdn-icons-png.flaticon.com/512/1998/1998611.png",
-  churches_destroyed: "https://cdn-icons-png.flaticon.com/512/3176/3176366.png",
-  educational_destroyed:
-    "https://cdn-icons-png.flaticon.com/512/201/201614.png",
-  educational_damaged:
-    "https://cdn-icons-png.flaticon.com/512/1820/1820795.png",
-  civic_destroyed: "https://cdn-icons-png.flaticon.com/512/2713/2713484.png",
+type InfraData = {
+  date: string;
+  total: number;
+  health: number;
+  education: number;
+  mosques: number;
+  churches: number;
+  bakeries: number;
+  water_wells: number;
+  universities: number;
+  industrial: number;
+  schools: number;
+  other: number;
 };
 
-export default function MapInfra() {
-  const [loading, setLoading] = useState(true);
+// icon kategori
+const categoryIcons: Record<string, string> = {
+  health: "https://cdn-icons-png.flaticon.com/512/2966/2966486.png",
+  education: "https://cdn-icons-png.flaticon.com/512/3135/3135755.png",
+  mosques: "https://cdn-icons-png.flaticon.com/512/1998/1998615.png",
+  churches: "https://cdn-icons-png.flaticon.com/512/1998/1998615.png",
+  bakeries: "https://cdn-icons-png.flaticon.com/512/3076/3076129.png",
+  water_wells: "https://cdn-icons-png.flaticon.com/512/415/415733.png",
+  universities: "https://cdn-icons-png.flaticon.com/512/3135/3135755.png",
+  industrial: "https://cdn-icons-png.flaticon.com/512/1046/1046857.png",
+  schools: "https://cdn-icons-png.flaticon.com/512/3135/3135755.png",
+  other: "https://cdn-icons-png.flaticon.com/512/1828/1828911.png",
+};
+
+export default function Map() {
   const [categories, setCategories] = useState<
-    { key: string; label: string; total: number }[]
+    { key: string; value: number }[]
   >([]);
+  const [loading, setLoading] = useState(true);
+
+
+  const L = typeof window !== "undefined" ? require("leaflet") : (null as any);
+  const MapContainer =
+    typeof window !== "undefined"
+      ? require("react-leaflet").MapContainer
+      : () => null;
+  const TileLayer =
+    typeof window !== "undefined"
+      ? require("react-leaflet").TileLayer
+      : () => null;
+  const Marker =
+    typeof window !== "undefined"
+      ? require("react-leaflet").Marker
+      : () => null;
+  const Popup =
+    typeof window !== "undefined" ? require("react-leaflet").Popup : () => null;
 
   useEffect(() => {
     async function fetchInfra() {
@@ -63,48 +66,19 @@ export default function MapInfra() {
 
         const latest = json[json.length - 1];
 
-        const extracted = [
-          {
-            key: "residential",
-            label: "Residential Destroyed",
-            total: latest.residential.ext_destroyed,
-          },
-          {
-            key: "mosques_destroyed",
-            label: "Mosques Destroyed",
-            total: latest.places_of_worship.ext_mosques_destroyed,
-          },
-          {
-            key: "mosques_damaged",
-            label: "Mosques Damaged",
-            total: latest.places_of_worship.ext_mosques_damaged,
-          },
-          {
-            key: "churches_destroyed",
-            label: "Churches Destroyed",
-            total: latest.places_of_worship.ext_churches_destroyed,
-          },
-          {
-            key: "educational_destroyed",
-            label: "Educational Destroyed",
-            total: latest.educational_buildings.ext_destroyed,
-          },
-          {
-            key: "educational_damaged",
-            label: "Educational Damaged",
-            total: latest.educational_buildings.ext_damaged,
-          },
-          {
-            key: "civic_destroyed",
-            label: "Civic Buildings Destroyed",
-            total: latest.civic_buildings.ext_destroyed,
-          },
-        ];
+        const extracted = Object.entries(latest)
+          .filter(([key]) => key !== "date" && key !== "total")
+          .map(([key, value]) => ({
+            key,
+            value: Number(value),
+          }));
 
         setCategories(extracted);
 
-        // Pop up sederhana
-        window.alert("Masih dibenerin ini, masih rusak pagenya, bantuin dong wkwkw. Sabar ye!");
+       
+        if (typeof window !== "undefined") {
+          window.alert("Masih dibenerin ini, masih rusak pagenya, sabar ye!");
+        }
       } catch (err) {
         console.error("Fetch infra failed", err);
       } finally {
@@ -114,42 +88,45 @@ export default function MapInfra() {
     fetchInfra();
   }, []);
 
-  if (loading) return <LoadingPage />;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-lg font-semibold">
+        Loading Infrastruktur...
+      </div>
+    );
+  }
 
   return (
-    <div className="h-[90vh] w-full">
+    <div className="w-full h-[500px] rounded-xl overflow-hidden shadow-md">
       <MapContainer
         center={[31.5, 34.47]} // Gaza
         zoom={11}
-        className="h-full w-full"
+        scrollWheelZoom={false}
+        style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
+          attribution='&copy; <a href="https://osm.org/copyright">OSM</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-
-        {categories.map((cat, i) => {
-          if (!cat.total || cat.total === 0) return null;
-
-          // 🔥 Random offset kecil biar marker ga numpuk di satu titik
-          const lat = 31.5 + (Math.random() - 0.5) * 0.1;
-          const lng = 34.47 + (Math.random() - 0.5) * 0.1;
-
-          const icon = L.icon({
-            iconUrl: categoryIcons[cat.key],
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-          });
-
-          return (
-            <Marker key={i} position={[lat, lng]} icon={icon}>
-              <Popup>
-                <b>{cat.label}</b>
-                <p>Total: {cat.total}</p>
-              </Popup>
-            </Marker>
-          );
-        })}
+        {categories.map((cat, idx) => (
+          <Marker
+            key={idx}
+            position={[31.5 + Math.random() * 0.1, 34.47 + Math.random() * 0.1]}
+            icon={L?.icon({
+              iconUrl: categoryIcons[cat.key] || categoryIcons["other"],
+              iconSize: [32, 32],
+              iconAnchor: [16, 32],
+            })}
+          >
+            <Popup>
+              <div className="text-sm">
+                <strong>{cat.key}</strong>
+                <br />
+                Jumlah: {cat.value}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
     </div>
   );
