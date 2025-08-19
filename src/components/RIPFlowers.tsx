@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import LoadingPage from "./Loading";
 
@@ -14,12 +14,16 @@ export default function RIPFlowers() {
   const [isMuted, setIsMuted] = useState(false);
   const [victims, setVictims] = useState<Victim[]>([]);
   const [rowCount, setRowCount] = useState(0);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 3000);
     return () => clearTimeout(timer);
   }, []);
+
 
   useEffect(() => {
     function calcRows() {
@@ -33,12 +37,12 @@ export default function RIPFlowers() {
     return () => window.removeEventListener("resize", calcRows);
   }, []);
 
-  // === Fetch data korban ===
+
   useEffect(() => {
     const fetchVictims = async () => {
       try {
         const res = await axios.get(
-          "https://data.techforpalestine.org/api/v2/killed-in-gaza/page-3.json"
+          "https://data.techforpalestine.org/api/v2/killed-in-gaza/page-1.json"
         );
 
         if (res.data?.results) {
@@ -64,59 +68,18 @@ export default function RIPFlowers() {
     fetchVictims();
   }, []);
 
-  // === Load YouTube API ===
+
   useEffect(() => {
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
-
-    // @ts-ignore
-    window.onYouTubeIframeAPIReady = () => {
-      // @ts-ignore
-      new YT.Player("yt-player", {
-        videoId: "YT-hsNN8SMw",
-        playerVars: {
-          autoplay: 1,
-          loop: 1,
-          playlist: "YT-hsNN8SMw",
-          controls: 0,
-          modestbranding: 1,
-          rel: 0,
-        },
-        events: {
-          onReady: (event: any) => {
-            event.target.unMute();
-            event.target.playVideo();
-          },
-        },
-      });
-    };
-
-    return () => {
-      const iframe = document.getElementById("yt-player");
-      if (iframe) iframe.remove();
-    };
+    if (audioRef.current) {
+      audioRef.current.volume = 0.5; 
+    }
   }, []);
 
-  // Toggle mute/unmute
-  function toggleMute() {
-    // @ts-ignore
-    const player = YT?.get("yt-player");
-    if (player) {
-      if (isMuted) player.unMute();
-      else player.mute();
-      setIsMuted(!isMuted);
-    }
-  }
-
-  // === Render ===
-  if (loading) return <LoadingPage />; 
+  if (loading) return <LoadingPage />;
 
   return (
     <div className="relative flex flex-col items-center pt-8 pb-16 bg-gray-900 min-h-screen text-white overflow-hidden">
-      <div id="yt-player" className="hidden" />
-
-      {/*BACKGROUND*/}
+      {/* BACKGROUND */}
       <div className="absolute inset-0 opacity-25 text-sm sm:text-base font-semibold pointer-events-none z-0">
         {victims.length > 0 ? (
           [...Array(rowCount)].map((_, row) => (
@@ -142,6 +105,7 @@ export default function RIPFlowers() {
         )}
       </div>
 
+      {/* Tombol Flower */}
       <button
         className="bg-[#910C1B] text-white px-4 py-2 rounded-xl cursor-pointer hover:bg-[#E2707D] transition relative z-10"
         onClick={() => setFlowers([...flowers, flowers.length + 1])}
@@ -149,6 +113,7 @@ export default function RIPFlowers() {
         Place a Flower 🌹
       </button>
 
+      {/* Flower Grid */}
       <div className="grid grid-cols-10 gap-2 mt-6 text-2xl relative z-10">
         {flowers.map((_, i) => (
           <span key={i} className="animate-bounce">
@@ -157,9 +122,18 @@ export default function RIPFlowers() {
         ))}
       </div>
 
+      {/* Audio Background */}
+      <audio ref={audioRef} src="/audio.mp3" autoPlay loop />
+
+      {/* Tombol Mute/Unmute */}
       <div className="fixed bottom-4 w-full flex justify-center z-10">
         <button
-          onClick={toggleMute}
+          onClick={() => {
+            if (audioRef.current) {
+              audioRef.current.muted = !isMuted;
+              setIsMuted(!isMuted);
+            }
+          }}
           className="bg-[#910C1B] text-white px-4 py-2 rounded-xl cursor-pointer shadow hover:bg-[#E2707D] transition"
         >
           {isMuted ? "Unmute Music" : "Mute Music"}

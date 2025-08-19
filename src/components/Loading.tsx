@@ -16,7 +16,8 @@ export default function LoadingPage() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1 }}
       >
-        From the river to the sea
+        <p className="p-4">🍉🍉🍉</p>
+        <p>From the river to the sea</p>
       </motion.h1>
     </motion.div>
   );

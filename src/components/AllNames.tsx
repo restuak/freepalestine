@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import LoadingPage from "./Loading";
 
 interface Victim {
@@ -14,7 +14,6 @@ interface Victim {
 const COLORS = {
   green: "#339564",
   pink: "#E2707D",
-  emerald: "#00A050",
   gray: "#353535",
   maroon: "#910C1B",
   white: "#FFFFFF",
@@ -24,55 +23,120 @@ const COLORS = {
 const PAGE_SIZE = 25;
 
 export default function AllNames() {
-  const [data, setData] = useState<Victim[]>([]);
-  const [fetching, setFetching] = useState(true);
-  const [showLoading, setShowLoading] = useState(true); 
+  const [items, setItems] = useState<Victim[]>([]);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [inlineLoading, setInlineLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const [q, setQ] = useState("");
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const nextPageRef = useRef(2);
+  const reachedEndRef = useRef(false);
+
+  async function fetchPage(page: number) {
+    const url = `https://data.techforpalestine.org/api/v2/killed-in-gaza/page-${page}.json`;
+    console.log("[fetch] start:", url);
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for page-${page}`);
+    const json = (await res.json()) as Victim[];
+    console.log("[fetch] done:", url, "count:", json.length);
+    return json;
+  }
 
   useEffect(() => {
-    async function fetchPage(p: number) {
+    let cancelled = false;
+
+    (async () => {
       try {
-        setFetching(true);
-        const res = await fetch(
-          `https://data.techforpalestine.org/api/v2/killed-in-gaza/page-${p}.json`,
-          { cache: "no-store" }
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as Victim[];
-
-        const sliced = json.slice(0, PAGE_SIZE);
-
-        if (sliced.length === 0) {
-          setHasMore(false);
-        } else {
-          setData((prev) => [...prev, ...sliced]);
-        }
+        const first = await fetchPage(1);
+        if (cancelled) return;
+        setItems(first);
+        setVisibleCount(PAGE_SIZE);
       } catch (e: any) {
-        setError(e.message);
+        console.error(e);
+        setError(e.message ?? "Fetch failed");
       } finally {
-        setFetching(false);
+        if (!cancelled) {
+          // ⏳ Tambahin delay 3 detik sebelum loading selesai
+          setTimeout(() => {
+            setInitialLoading(false);
+          }, 3000);
+        }
+      }
+    })();
 
-        setTimeout(() => setShowLoading(false), 3000);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Prefetch halaman berikutnya di background
+  useEffect(() => {
+    if (initialLoading) return; // jangan jalan sebelum initial loading selesai
+    let cancelled = false;
+
+    async function prefetchLoop() {
+      while (!cancelled && !reachedEndRef.current) {
+        const p = nextPageRef.current;
+        try {
+          const data = await fetchPage(p);
+          if (cancelled) return;
+          if (data.length === 0) {
+            reachedEndRef.current = true;
+            break;
+          }
+          setItems((prev) => [...prev, ...data]);
+          nextPageRef.current = p + 1;
+        } catch {
+          break;
+        }
       }
     }
-    fetchPage(page);
-  }, [page]);
 
-  const filtered = useMemo(() => {
-    if (!q.trim()) return data;
-    const needle = q.toLowerCase();
-    return data.filter((v) =>
-      [v.name, v.en_name]
-        .filter(Boolean)
-        .some((val) => val!.toLowerCase().includes(needle))
-    );
-  }, [data, q]);
+    prefetchLoop();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialLoading]);
 
+  async function handleLoadMore() {
+    const need = visibleCount + PAGE_SIZE;
+    if (items.length >= need || reachedEndRef.current) {
+      setVisibleCount((c) => c + PAGE_SIZE);
+      return;
+    }
 
-  if (showLoading) {
+    setInlineLoading(true);
+    const pageToFetch = nextPageRef.current;
+
+    try {
+      const data = await fetchPage(pageToFetch);
+      if (data.length === 0) {
+        reachedEndRef.current = true;
+      } else {
+        setItems((prev) => [...prev, ...data]);
+        nextPageRef.current = pageToFetch + 1;
+      }
+    } finally {
+      setInlineLoading(false);
+      setVisibleCount((c) => c + PAGE_SIZE);
+    }
+  }
+
+  const displayList = useMemo(() => {
+    const base = q.trim()
+      ? items.filter((v) =>
+          [v.name, v.en_name]
+            .filter(Boolean)
+            .some((t) => (t as string).toLowerCase().includes(q.toLowerCase()))
+        )
+      : items;
+    return base.slice(0, visibleCount);
+  }, [items, q, visibleCount]);
+
+  // 👉 LoadingPage hanya tampil saat pertama kali fetch page-1 + delay 3 detik
+  if (initialLoading) {
     return <LoadingPage />;
   }
 
@@ -81,7 +145,6 @@ export default function AllNames() {
       className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
       style={{ color: COLORS.white }}
     >
-      {/* Header sticky */}
       <div
         className="sticky top-0 z-10 py-4"
         style={{ backgroundColor: COLORS.black }}
@@ -107,30 +170,26 @@ export default function AllNames() {
             }}
           />
           <p className="text-xs mt-1" style={{ color: COLORS.pink }}>
-            Showing {filtered.length} of {data.length} names
+            Showing {displayList.length} of {items.length} names
           </p>
         </div>
       </div>
 
       {error && (
         <div
-          className="p-4 rounded-xl text-center"
+          className="p-4 rounded-xl text-center mt-4"
           style={{ color: COLORS.pink }}
         >
           Error: {error}
         </div>
       )}
 
-      {/* List data */}
       <div className="grid gap-4 mt-4">
-        {filtered.map((v, i) => (
+        {displayList.map((v, i) => (
           <div
             key={`${v.id ?? "noid"}-${i}`}
             className="p-4 rounded-xl border transition"
-            style={{
-              backgroundColor: COLORS.black,
-              borderColor: COLORS.gray,
-            }}
+            style={{ backgroundColor: COLORS.black, borderColor: COLORS.gray }}
           >
             <p
               className="text-xl font-semibold flex items-center gap-2"
@@ -159,26 +218,20 @@ export default function AllNames() {
         ))}
       </div>
 
-      {/* Pagination */}
-      <div className="flex justify-center mt-6">
-        {hasMore && !fetching && (
+      <div className="flex flex-col items-center gap-2 mt-6">
+        {visibleCount < items.length && (
           <button
-            onClick={() => {
-              setShowLoading(true); 
-              setPage((p) => p + 1);
-            }}
-            className="px-6 py-2 rounded-xl font-semibold"
-            style={{
-              backgroundColor: COLORS.green,
-              color: COLORS.white,
-            }}
+            onClick={handleLoadMore}
+            className="px-6 py-2 rounded-xl font-semibold disabled:opacity-60"
+            disabled={inlineLoading}
+            style={{ backgroundColor: COLORS.green, color: COLORS.white }}
           >
-            Load More
+            {inlineLoading ? "Loading…" : "Load More"}
           </button>
         )}
-        {fetching && data.length > 0 && (
-          <p className="text-sm mt-2" style={{ color: COLORS.pink }}>
-            Loading…
+        {visibleCount >= items.length && (
+          <p className="text-sm" style={{ color: COLORS.pink }}>
+            No more names.
           </p>
         )}
       </div>
