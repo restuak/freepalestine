@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import OverviewSummary from "@/components/statistics/SummaryKilled";
-import CasualtyByAge from "@/components/statistics/CasualtyByAge";
+import CasualtyByAge from "@/components/statistics/CasualtiesByAge";
 import HeroRemember from "@/components/HeroRemember";
 import CasualtiesDonut from "@/components/statistics/CasualtiesByCategory";
 import PressKilled from "@/components/statistics/PressKilled";

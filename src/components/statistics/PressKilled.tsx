@@ -59,7 +59,7 @@ export default function PressKilled() {
               {count.toLocaleString()}
             </div>
             <p className="mt-4 text-lg tracking-[0.3em] text-[#FBCAD1] uppercase">
-              Journalists Killed
+              Journalists
             </p>
           </motion.div>
         ) : (

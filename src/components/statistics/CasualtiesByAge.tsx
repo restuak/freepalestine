@@ -71,7 +71,7 @@ export default function CasualtyByAgeChart() {
 
   return (
     <div className="mt-20">
-      <SectionTitle>Casualty by Age</SectionTitle>
+      <SectionTitle>Casualties by Age</SectionTitle>
       {loadingPage && (
         <p className="text-center text-gray-400 mb-4">
           Loading page {loadingPage}...
