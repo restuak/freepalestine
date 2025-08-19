@@ -41,7 +41,7 @@ export default function OverviewSummary({ data }: { data: any }) {
 
   return (
     <div ref={ref}>
-      <SectionTitle>Casualty Overview</SectionTitle>
+      <SectionTitle>Casualties Overview</SectionTitle>
       <p className="text-center text-gray-400 mb-12 text-sm md:text-base">
         Last Update: {data.gaza.last_update}
       </p>
