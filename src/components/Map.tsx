@@ -77,10 +77,10 @@ export default function Map() {
 
        
         if (typeof window !== "undefined") {
-          window.alert("Masih dibenerin ini, masih rusak pagenya, sabar yaaaaa!");
+          window.alert("Masih dibenerin ini, masih rusak pagenya, sabar yaaaaa :)");
         }
       } catch (err) {
-        console.error("Fetch infra failed", err);
+        console.error("Fetch failed", err);
       } finally {
         setTimeout(() => setLoading(false), 2000);
       }
@@ -96,6 +96,7 @@ export default function Map() {
     );
   }
 
+  
   return (
     <div className="w-full h-screen rounded-xl overflow-hidden shadow-md">
       <MapContainer
@@ -108,7 +109,7 @@ export default function Map() {
           attribution='&copy; <a href="https://osm.org/copyright">OSM</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {categories.map((cat, idx) => (
+        {/* {categories.map((cat, idx) => (
           <Marker
             key={idx}
             position={[31.5 + Math.random() * 0.1, 34.47 + Math.random() * 0.1]}
@@ -126,7 +127,7 @@ export default function Map() {
               </div>
             </Popup>
           </Marker>
-        ))}
+        ))} */}
       </MapContainer>
     </div>
   );

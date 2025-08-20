@@ -61,7 +61,7 @@ export default function AllNames() {
           // ⏳ Tambahin delay 3 detik sebelum loading selesai
           setTimeout(() => {
             setInitialLoading(false);
-          }, 3000);
+          }, 2000);
         }
       }
     })();

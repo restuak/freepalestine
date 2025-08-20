@@ -27,7 +27,7 @@ export default function PressMemorial() {
        
         timeout = setTimeout(() => {
           setLoading(false);
-        }, 3000);
+        }, 2000);
       } catch (err) {
         console.error("Failed to fetch press data", err);
         setLoading(false);

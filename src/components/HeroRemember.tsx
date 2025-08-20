@@ -51,7 +51,7 @@ export default function HeroRemember() {
         </h1>
 
         {deaths !== null ? (
-          <p className="text-[#CE1126] text-6xl md:text-8xl font-bold mt-6 tracking-widest uppercase transition-all duration-500">
+          <p className="text-[#CE1126] text-6xl md:text-8xl font-extrabold mt-6 tracking-widest uppercase transition-all duration-500">
             {count.toLocaleString()}
           </p>
         ) : (
@@ -60,7 +60,7 @@ export default function HeroRemember() {
           </p>
         )}
 
-        <p className="mt-6 text-lg md:text-xl text-[#E96B78] tracking-[0.3em] uppercase">
+        <p className="mt-6 text-md md:text-xl text-[#E96B78] tracking-[0.3em] uppercase">
           Every Number is a Human
         </p>
 

@@ -26,7 +26,7 @@ export default function Overview() {
        
         timeout = setTimeout(() => {
           setLoading(false);
-        }, 3000);
+        }, 2000);
       } catch (err) {
         console.error(err);
         setLoading(false);
